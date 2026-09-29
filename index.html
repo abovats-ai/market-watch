@@ -1,0 +1,47 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Market Watch Pro</title>
+<style>
+:root{--bg:#f4f5f8;--c:#fff;--t:#111827;--m:#6b7280;--b:#e5e7eb;--g:#059669;--r:#dc2626;--y:#d97706;--a:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#0b0e14;--c:#131722;--t:#e5e7eb;--m:#8b93a7;--b:#232a3a;--g:#34d399;--r:#f87171;--y:#fbbf24;--a:#60a5fa}}
+*{box-sizing:border-box}body{margin:0;font:14px system-ui,sans-serif;background:var(--bg);color:var(--t)}
+.w{max-width:1150px;margin:auto;padding:16px}header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+h1{font-size:22px;margin:0}h2{margin:26px 0 10px;font-size:17px}.m{color:var(--m);font-size:12px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--g);margin-right:6px;animation:p 1.6s infinite}@keyframes p{50%{opacity:.25}}
+.bar{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}input{flex:1;min-width:150px;padding:9px 12px;border-radius:8px;border:1px solid var(--b);background:var(--c);color:var(--t)}
+.ch{padding:8px 12px;border-radius:8px;border:1px solid var(--b);background:var(--c);color:var(--t);cursor:pointer}.ch.on{background:var(--a);color:#fff;border-color:var(--a)}
+.kp{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}.kp div{background:var(--c);border:1px solid var(--b);border-radius:10px;padding:10px}.kp b{font-size:20px;display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:12px}.row{display:flex;justify-content:space-between;align-items:center}
+.s{font-weight:700;font-size:17px}.up{color:var(--g)}.dn{color:var(--r)}.tag{font-size:10px;background:var(--a);color:#fff;border-radius:5px;padding:1px 5px;margin-left:6px;vertical-align:middle}
+.bd{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;color:#fff}.SB{background:#047857}.B{background:#10b981}.H{background:var(--y)}.S{background:#f97316}.SS{background:#b91c1c}
+.sc{height:6px;background:var(--b);border-radius:4px;margin:10px 0 4px;overflow:hidden}.sc i{display:block;height:100%;background:var(--a)}
+a{color:var(--a);text-decoration:none;display:block;margin-top:6px;font-size:12.5px}.e{font-size:12px;color:var(--m)}
+.nw a{background:var(--c);border:1px solid var(--b);border-radius:8px;padding:8px}
+</style></head><body><div class="w">
+<header><h1>📈 Market Watch Pro</h1><span class="m"><span class="dot"></span><span id="u">Loading…</span></span></header>
+<div class="m">Scores are algorithmic signals (momentum, analyst consensus, news tone, earnings). Not financial advice. Penny stocks carry high risk.</div>
+<div class="kp" id="kp"></div>
+<div class="bar"><input id="q" placeholder="Search ticker…"><span id="ch"></span></div>
+<div id="app"></div><h2>Market headlines</h2><div class="nw" id="mk"></div></div>
+<script>
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cls={"Strong Buy":"SB","Buy":"B","Hold":"H","Sell":"S","Strong Sell":"SS"};
+let D=null,F="All",Q="";
+const card=r=>`<div class="card"><div class="row"><span class="s">${esc(r.s)}${r.pri?'<span class="tag">yours</span>':''}</span><span class="bd ${cls[r.rating]}">${r.rating}</span></div>
+<div class="row" style="margin-top:6px"><span>$${r.p.toFixed(2)} <b class="${r.chg>=0?'up':'dn'}">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</b></span><b>${r.score}/10 · ${Math.round(r.score*10)}%</b></div>
+<div class="sc"><i style="width:${r.score*10}%"></i></div>
+<div class="e">${r.an?`Analysts: ${r.an.strongBuy+r.an.buy} buy · ${r.an.hold} hold · ${r.an.sell+r.an.strongSell} sell`:'No analyst data'}${r.earn?' · Earnings '+esc(r.earn):''}</div>
+${r.news.map(n=>`<a href="${esc(n.u)}" target="_blank" rel="noopener">${esc(n.h)} <span class="m">— ${esc(n.src)}</span></a>`).join('')}</div>`;
+const ok=r=>(F=="All"||r.rating==F)&&r.s.includes(Q);
+const sec=(t,a)=>{a=a.filter(ok);return a.length?`<h2>${esc(t)}</h2><div class="grid">${a.map(card).join('')}</div>`:''};
+function draw(){if(!D)return;
+ const all=[...D.watchlist,...D.tiers.flatMap(t=>t.stocks)];const u=[...new Map(all.map(r=>[r.s,r])).values()];
+ const n=k=>u.filter(r=>r.rating==k).length;
+ document.getElementById('kp').innerHTML=`<div>Strong Buy<b class="up">${n("Strong Buy")}</b></div><div>Buy<b class="up">${n("Buy")}</b></div><div>Hold<b>${n("Hold")}</b></div><div>Sell / Strong Sell<b class="dn">${n("Sell")+n("Strong Sell")}</b></div><div>Tracked<b>${u.length}</b></div>`;
+ document.getElementById('ch').innerHTML=["All","Strong Buy","Buy","Hold","Sell","Strong Sell"].map(k=>`<button class="ch ${k==F?'on':''}" onclick="F='${k}';draw()">${k}</button>`).join(' ');
+ document.getElementById('app').innerHTML=sec('⭐ Your priority tickers',D.watchlist.filter(r=>r.pri))+D.tiers.map(t=>sec('Top 10 picks: '+t.label,t.stocks)).join('')+sec('Full watchlist (ranked)',D.watchlist.filter(r=>!r.pri));
+ document.getElementById('mk').innerHTML=D.market.map(n=>`<a href="${esc(n.u)}" target="_blank" rel="noopener">${esc(n.h)} <span class="m">— ${esc(n.src)}</span></a>`).join('');
+ document.getElementById('u').textContent='Live · updated '+new Date(D.updated).toLocaleString();}
+async function load(){try{window.D=D=await (await fetch('data.json?t='+Date.now())).json();draw()}catch(e){document.getElementById('u').textContent='No data yet. Run the GitHub Action once.'}}
+document.getElementById('q').oninput=e=>{Q=e.target.value.toUpperCase();draw()};
+load();setInterval(load,60000);
+</script><script src="alerts.js"></script><script type="module" src="community.js"></script></body></html>
