@@ -24,7 +24,7 @@ HARAM="bank financ insurance tobacco casino gambl alcohol brew wine distill".spl
 def rating(x): return "Strong Buy" if x>=8.5 else "Buy" if x>=7 else "Hold" if x>=5 else "Sell" if x>=3.5 else "Strong Sell"
 START=time.time()
 def rec(s):
-    if time.time()-START>3000: return prev.get(s)
+    if time.time()-START>1200: return prev.get(s)
     q=g(f"quote?symbol={s}")
     if not q or not q.get("c"): return None
     o=prev.get(s,{});pf=o.get("prof")
@@ -69,7 +69,7 @@ def deep(r):
     pe=g(f"stock/peers?symbol={s}") or []
     r["deep"]={"ts":time.time(),"beats":sum(1 for x in e if x.get("actual") is not None and x.get("estimate") is not None and x["actual"]>x["estimate"]),"n":len(e),"sur":[x.get("surprisePercent") for x in e],"ib":sum(1 for x in it if x.get("transactionCode")=="P"),"is":sum(1 for x in it if x.get("transactionCode")=="S"),"peers":pe[:6]}
 for r in {r["s"]:r for r in [x for x in wl if x["pri"]]+[x for t in tiers for x in t["stocks"]]+wl[:25]}.values():
-    if time.time()-START<3000: deep(r)
+    if time.time()-START<1350: deep(r)
 EV=[("Rate cuts",["rate cut","cuts rates","cut interest"],{"Tech":1,"Semis":1,"Health":1,"Industrials":1}),("Rate/inflation pressure",["rate hike","hot inflation","inflation rises","inflation jumps"],{"Tech":-1,"Semis":-1}),("Tariffs",["tariff"],{"Semis":-1,"Industrials":-1,"Consumer":-1}),("Chip export limits",["export control","chip ban","chip curb","export restriction"],{"Semis":-1}),("Oil spike",["oil surge","oil jumps","crude jumps","oil prices rise"],{"Energy":1,"Industrials":-1}),("Oil drop",["oil plunge","oil falls","crude falls","oil prices fall"],{"Energy":-1,"Industrials":1}),("AI demand",["ai demand","data center","ai spending","ai boom"],{"Semis":1,"Tech":1}),("Conflict/sanctions",["war ","sanction","missile","ceasefire"],{"Energy":1,"Consumer":-1}),("Recession fears",["recession","layoffs","job cuts"],{"Consumer":-1,"Industrials":-1,"Tech":-1})]
 gn=g("news?category=general") or []
 mk=[{"h":a["headline"],"u":a["url"],"src":a.get("source","")} for a in gn[:8]]
