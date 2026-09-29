@@ -44,4 +44,4 @@ function draw(){if(!D)return;
 async function load(){try{window.D=D=await (await fetch('data.json?t='+Date.now())).json();draw()}catch(e){document.getElementById('u').textContent='No data yet. Run the GitHub Action once.'}}
 document.getElementById('q').oninput=e=>{Q=e.target.value.toUpperCase();draw()};
 load();setInterval(load,60000);
-</script><script src="alerts.js"></script><script type="module" src="community.js"></script></body></html>
+</script><script src="alerts.js"></script></body></html>
