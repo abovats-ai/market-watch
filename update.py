@@ -7,6 +7,7 @@ def g(p):
 rd=lambda f:list(dict.fromkeys(open(f).read().split())) if os.path.exists(f) else []
 W,U,H=rd("watchlist.txt"),rd("universe.txt"),set(rd("halal.txt"))
 PRI=set(W[:11])
+MK="revenueGrowthTTMYoy epsGrowthTTMYoy grossMarginTTM operatingMarginTTM netProfitMarginTTM roeTTM roiTTM roaTTM currentRatioQuarterly quickRatioQuarterly totalDebt/totalEquityQuarterly netInterestCoverageTTM pfcfShareTTM psTTM pbQuarterly dividendYieldIndicatedAnnual payoutRatioTTM 13WeekPriceReturnDaily 26WeekPriceReturnDaily 52WeekPriceReturnDaily 10DayAverageTradingVolume".split()
 try: prev={r["s"]:r for r in json.load(open("data.json"))["_all"]}
 except Exception: prev={}
 POS="beat surge soar jump upgrade record raise growth win partnership approval expands strong rally".split()
@@ -27,10 +28,10 @@ def rec(s):
     q=g(f"quote?symbol={s}")
     if not q or not q.get("c"): return None
     o=prev.get(s,{});pf=o.get("prof")
-    if not pf or (now-d.date.fromisoformat(pf["ts"])).days>7:
+    if not pf or "mx" not in pf or (now-d.date.fromisoformat(pf["ts"])).days>7:
         p=g(f"stock/profile2?symbol={s}") or {};m=(g(f"stock/metric?symbol={s}&metric=all") or {}).get("metric",{})
-        pf={"name":p.get("name",s),"ind":p.get("finnhubIndustry",""),"hi":m.get("52WeekHigh"),"lo":m.get("52WeekLow"),"pe":m.get("peTTM"),"beta":m.get("beta"),"ts":str(now)}
-    r={"s":s,"p":q["c"],"chg":q.get("dp") or 0,"sent":0,"pri":s in PRI,"earn":E.get(s),"prof":pf,"sec":grp(pf["ind"]),"hist":(o.get("hist",[])+[q["c"]])[-96:]}
+        pf={"name":p.get("name",s),"ind":p.get("finnhubIndustry",""),"hi":m.get("52WeekHigh"),"lo":m.get("52WeekLow"),"pe":m.get("peTTM"),"beta":m.get("beta"),"mx":{k:m.get(k) for k in MK},"x":{k:p.get(k) for k in ("exchange","country","currency","marketCapitalization","shareOutstanding","ipo")},"ts":str(now)}
+    r={"s":s,"p":q["c"],"chg":q.get("dp") or 0,"sent":0,"pri":s in PRI,"earn":E.get(s),"prof":pf,"deep":o.get("deep"),"sec":grp(pf["ind"]),"hist":(o.get("hist",[])+[q["c"]])[-96:]}
     r["halal"]="yes" if s in H else "no" if any(x in (pf["ind"]+pf["name"]).lower() for x in HARAM) else "check"
     stale=not o.get("nts") or time.time()-o["nts"]>21600 or s in PRI or abs(r["chg"])>=5
     if stale:
@@ -59,6 +60,16 @@ allr=list({r["s"]:r for r in un+wl}.values())
 pool=[r for r in allr if r["p"]<70]
 T=[(0,1),(1,5),(5,10),(10,25),(25,70)]
 tiers=[{"label":f"${lo} – ${hi}","stocks":sorted([r for r in pool if lo<=r["p"]<hi],key=lambda r:-r["score"])[:12]} for lo,hi in T]
+def deep(r):
+    o=r.get("deep")
+    if o and time.time()-o["ts"]<86400: return
+    s=r["s"]
+    e=g(f"stock/earnings?symbol={s}&limit=4") or []
+    it=(g(f"stock/insider-transactions?symbol={s}&from={now-d.timedelta(90)}&to={now}") or {}).get("data",[])
+    pe=g(f"stock/peers?symbol={s}") or []
+    r["deep"]={"ts":time.time(),"beats":sum(1 for x in e if x.get("actual") is not None and x.get("estimate") is not None and x["actual"]>x["estimate"]),"n":len(e),"sur":[x.get("surprisePercent") for x in e],"ib":sum(1 for x in it if x.get("transactionCode")=="P"),"is":sum(1 for x in it if x.get("transactionCode")=="S"),"peers":pe[:6]}
+for r in {r["s"]:r for r in [x for x in wl if x["pri"]]+[x for t in tiers for x in t["stocks"]]+wl[:25]}.values():
+    if time.time()-START<3000: deep(r)
 EV=[("Rate cuts",["rate cut","cuts rates","cut interest"],{"Tech":1,"Semis":1,"Health":1,"Industrials":1}),("Rate/inflation pressure",["rate hike","hot inflation","inflation rises","inflation jumps"],{"Tech":-1,"Semis":-1}),("Tariffs",["tariff"],{"Semis":-1,"Industrials":-1,"Consumer":-1}),("Chip export limits",["export control","chip ban","chip curb","export restriction"],{"Semis":-1}),("Oil spike",["oil surge","oil jumps","crude jumps","oil prices rise"],{"Energy":1,"Industrials":-1}),("Oil drop",["oil plunge","oil falls","crude falls","oil prices fall"],{"Energy":-1,"Industrials":1}),("AI demand",["ai demand","data center","ai spending","ai boom"],{"Semis":1,"Tech":1}),("Conflict/sanctions",["war ","sanction","missile","ceasefire"],{"Energy":1,"Consumer":-1}),("Recession fears",["recession","layoffs","job cuts"],{"Consumer":-1,"Industrials":-1,"Tech":-1})]
 gn=g("news?category=general") or []
 mk=[{"h":a["headline"],"u":a["url"],"src":a.get("source","")} for a in gn[:8]]

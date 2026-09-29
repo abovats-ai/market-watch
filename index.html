@@ -35,6 +35,7 @@ g('gb').onclick=go;g('gi').onkeydown=e=>{if(e.key=='Enter')go()}})();
 <div class="kp" id="kp"></div></div></div>
 <div class="w"><div class="bar"><input id="q" placeholder="Search ticker or company…"><select id="so"><option value="score">Sort: Score</option><option value="p">Sort: Price</option><option value="chg">Sort: Daily change</option><option value="s">Sort: A–Z</option></select><select id="se"></select><button class="ch" id="hf">☪ Halal-friendly</button></div>
 <div class="bar" id="ch"></div><div id="app"></div><h2>Market headlines</h2><div id="mk"></div></div>
+<div id="dm" style="display:none;position:fixed;inset:0;background:#000a;z-index:90;padding:14px;overflow:auto"><div class="bx" style="max-width:680px;margin:auto;background:var(--c);border:1px solid var(--b);border-radius:16px;padding:16px"><div class="row"><h2 style="margin:0" id="dt"></h2><button class="ch" id="dc">Close</button></div><div id="db"></div></div></div>
 <div id="am"><div class="bx"><div class="row"><h2 style="margin:0">🔔 Alerts</h2><button class="ch" id="ac">Close</button></div><div id="al"></div></div></div>
 <script>
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -44,7 +45,7 @@ const spark=h=>{if(!h||h.length<2)return'<div class="e" style="height:34px">Char
  return`<svg viewBox="0 0 100 30" preserveAspectRatio="none" style="width:100%;height:34px"><polyline fill="none" stroke="${c}" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${h.map((v,i)=>(i/(h.length-1)*100).toFixed(1)+','+(28-(v-lo)/r*26).toFixed(1)).join(' ')}"/></svg>`};
 const hb=r=>r.halal=='yes'?'<span class="pl hl">☪ Halal</span>':r.halal=='no'?'<span class="pl hn">Non-halal sector</span>':'<span class="pl">☪ Verify</span>';
 const card=r=>{const p=r.prof||{},pos=p.hi>p.lo?Math.max(0,Math.min(100,(r.p-p.lo)/(p.hi-p.lo)*100)):null;
-return`<div class="card"><div class="row"><div><span class="s">${esc(r.s)}</span>${r.pri?'<span class="tag">yours</span>':''}<div class="nm">${esc(p.name)}</div></div><span class="bd ${cls[r.rating]}">${r.rating}</span></div>
+return`<div class="card" data-s="${esc(r.s)}" style="cursor:pointer"><div class="row"><div><span class="s">${esc(r.s)}</span>${r.pri?'<span class="tag">yours</span>':''}<div class="nm">${esc(p.name)}</div></div><span class="bd ${cls[r.rating]}">${r.rating}</span></div>
 <div class="row" style="margin-top:8px"><span style="font-size:17px">$${r.p.toFixed(2)} <b class="${r.chg>=0?'up':'dn'}" style="font-size:13px">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</b></span><b>${r.score}/10 · ${Math.round(r.score*10)}%</b></div>
 <div class="sc"><i style="width:${r.score*10}%"></i></div>${spark(r.hist)}
 <div style="margin:6px 0"><span class="pl">${esc(r.sec)}</span>${hb(r)}</div>
@@ -74,5 +75,28 @@ document.getElementById('bell').onclick=()=>{const u=D._all,hc=u.filter(r=>r.sco
 document.getElementById('ac').onclick=()=>document.getElementById('am').style.display='none';
 async function load(){try{D=await (await fetch('data.json?t='+Date.now())).json();draw()}catch(e){document.getElementById('u').textContent='No data yet. Run the GitHub Action once.'}}
 q.oninput=e=>{Q=e.target.value.toUpperCase();draw()};so.onchange=e=>{SO=e.target.value;draw()};se.onchange=e=>{SE=e.target.value;draw()};hf.onclick=()=>{HF=!HF;draw()};
+const f=(v,d=2,s='')=>v==null||isNaN(v)?'–':(+v).toFixed(d)+s;
+document.getElementById('app').onclick=e=>{if(e.target.closest('a'))return;const c=e.target.closest('.card');if(c)deepScan(c.dataset.s)};
+document.getElementById('dc').onclick=()=>document.getElementById('dm').style.display='none';
+window.cp=t=>{try{navigator.clipboard.writeText(t)}catch(e){}};
+function deepScan(sym){const r=D._all.find(x=>x.s==sym),p=r.prof||{},m=p.mx||{},x=p.x||{},dp=r.deep,an=r.an;
+ const pos=p.hi>p.lo?(r.p-p.lo)/(p.hi-p.lo)*100:null,nn=v=>v==null?null:v;
+ const C=[["Revenue growth above 10% (TTM)",nn(m.revenueGrowthTTMYoy)==null?null:m.revenueGrowthTTMYoy>10],["EPS growth above 10% (TTM)",nn(m.epsGrowthTTMYoy)==null?null:m.epsGrowthTTMYoy>10],["Profitable (net margin above 0)",nn(m.netProfitMarginTTM)==null?null:m.netProfitMarginTTM>0],["Gross margin above 30%",nn(m.grossMarginTTM)==null?null:m.grossMarginTTM>30],["Return on equity above 12%",nn(m.roeTTM)==null?null:m.roeTTM>12],["Debt to equity below 1.5",nn(m['totalDebt/totalEquityQuarterly'])==null?null:m['totalDebt/totalEquityQuarterly']<1.5],["Current ratio above 1.2",nn(m.currentRatioQuarterly)==null?null:m.currentRatioQuarterly>1.2],["Interest coverage above 3",nn(m.netInterestCoverageTTM)==null?null:m.netInterestCoverageTTM>3],["Positive free cash flow",nn(m.pfcfShareTTM)==null?null:m.pfcfShareTTM>0],["P/E positive and below 35",p.pe==null?null:p.pe>0&&p.pe<35],["Price/sales below 10",nn(m.psTTM)==null?null:m.psTTM<10],["Beat estimates 3 of last 4 quarters",dp&&dp.n?dp.beats>=3:null],["Insiders net buying (90 days)",dp&&(dp.ib+dp.is)?dp.ib>dp.is:null],["Analysts lean buy",an?(an.strongBuy+an.buy)>(an.hold+an.sell+an.strongSell):null],["Positive 26-week momentum",nn(m['26WeekPriceReturnDaily'])==null?null:m['26WeekPriceReturnDaily']>0],["Above bottom third of 52-week range",pos==null?null:pos>33]];
+ const av=C.filter(c=>c[1]!==null),ps=av.filter(c=>c[1]).length;
+ const ln=(a,b)=>`<div class="row" style="padding:4px 0;border-bottom:1px solid var(--b)"><span class="m">${a}</span><b>${b}</b></div>`;
+ const blk=(t,rows)=>`<h3 style="margin:16px 0 4px">${t}</h3>`+rows.join('');
+ const sheet=`${sym} decision sheet\n1 Thesis (3 lines):\n2 What the market believes:\n3 Where I disagree and why:\n4 Base/bull/bear value:\n5 What must go right at $${r.p}:\n6 Invalidation:\n7 Horizon:\n8 Position size:\n9 Re-check quarterly:`;
+ document.getElementById('dt').textContent=sym+' · '+(p.name||'')+' — deep scan';
+ document.getElementById('db').innerHTML=`<div class="al"><b>${ps} of ${av.length} checks passed</b> <span class="m">(${C.length-av.length} lack data)</span><div class="sc"><i style="width:${av.length?ps/av.length*100:0}%"></i></div></div>`+
+ blk('Checklist',C.map(c=>ln(c[0],c[1]===null?'<span class="m">n/a</span>':c[1]?'<span class="up">Pass</span>':'<span class="dn">Fail</span>')))+
+ blk('1 · Identity',[ln('Exchange / country',(x.exchange||'–')+' / '+(x.country||'–')),ln('Currency',x.currency||'–'),ln('Market cap',x.marketCapitalization?'$'+f(x.marketCapitalization,0)+'M':'–'),ln('Shares outstanding',x.shareOutstanding?f(x.shareOutstanding,1)+'M':'–'),ln('IPO date',x.ipo||'–'),ln('Sector / industry',esc(r.sec)+' / '+esc(p.ind)),ln('Next earnings',r.earn||'–'),ln('Peers',dp&&dp.peers.length?dp.peers.join(', '):'–')])+
+ blk('5–8 · Growth, profit, balance sheet, returns',[ln('Revenue growth (TTM YoY)',f(m.revenueGrowthTTMYoy,1,'%')),ln('EPS growth (TTM YoY)',f(m.epsGrowthTTMYoy,1,'%')),ln('Gross / operating / net margin',f(m.grossMarginTTM,1,'%')+' / '+f(m.operatingMarginTTM,1,'%')+' / '+f(m.netProfitMarginTTM,1,'%')),ln('ROE / ROI / ROA',f(m.roeTTM,1,'%')+' / '+f(m.roiTTM,1,'%')+' / '+f(m.roaTTM,1,'%')),ln('Debt to equity',f(m['totalDebt/totalEquityQuarterly'])),ln('Current / quick ratio',f(m.currentRatioQuarterly)+' / '+f(m.quickRatioQuarterly)),ln('Interest coverage',f(m.netInterestCoverageTTM,1))])+
+ blk('11–13 · Expectations, valuation, dividends',[ln('P/E / P/S / P/B',f(p.pe,1)+' / '+f(m.psTTM,1)+' / '+f(m.pbQuarterly,1)),ln('Price / free cash flow',f(m.pfcfShareTTM,1)),ln('Dividend yield / payout',f(m.dividendYieldIndicatedAnnual,2,'%')+' / '+f(m.payoutRatioTTM,1,'%')),ln('Analysts buy / hold / sell',an?(an.strongBuy+an.buy)+' / '+an.hold+' / '+(an.sell+an.strongSell):'–'),ln('Last 4 earnings surprises',dp&&dp.sur.length?dp.sur.map(v=>f(v,1,'%')).join(', '):'–'),ln('Insider buys / sells (90 days)',dp?dp.ib+' / '+dp.is:'–')])+
+ blk('16 · Price and positioning',[ln('13 / 26 / 52-week return',f(m['13WeekPriceReturnDaily'],1,'%')+' / '+f(m['26WeekPriceReturnDaily'],1,'%')+' / '+f(m['52WeekPriceReturnDaily'],1,'%')),ln('52-week range',p.lo?'$'+f(p.lo)+' – $'+f(p.hi)+' ('+f(pos,0,'%')+' of range)':'–'),ln('Beta',f(p.beta))])+
+ `<h3 style="margin:16px 0 4px">Needs manual research</h3><div class="m">Sections 2–4 (business model, industry, macro), 9–10 (dilution, forensic accounting), 14–15 (management, short interest, ownership), 17–19 (catalysts, risks, filings) and 21 (your decision sheet) can't be automated on free data.</div>
+ <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${esc(sym)}&type=10-K" target="_blank" rel="noopener">Open ${esc(sym)} filings on SEC EDGAR</a>
+ <div class="row" style="margin-top:10px;gap:8px"><button class="ch" onclick="cp(${JSON.stringify(sheet).replace(/"/g,'&quot;')})">Copy decision sheet</button><button class="ch" onclick="cp('Do a full deep dive on ${sym} using my 21-section checklist and today\'s data. Give a verdict, base/bull/bear values and what would prove me wrong.')">Copy prompt for Claude</button></div>
+ <p class="m">Pass/fail thresholds are simple rules of thumb, not advice. Missing data shows n/a.</p>`;
+ document.getElementById('dm').style.display='block'}
 load();setInterval(load,60000);
 </script></body></html>
