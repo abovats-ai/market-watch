@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sufiaxy</title>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6366f1"><title>Sufiaxy</title>
 <style>
 :root{--bg:#f3f4f8;--c:#fff;--t:#0f172a;--m:#64748b;--b:#e2e8f0;--g:#059669;--r:#dc2626;--y:#d97706;--a:#6366f1;--h:#eef0ff}
 @media(prefers-color-scheme:dark){:root{--bg:#070a12;--c:#0f1420;--t:#e8ecf5;--m:#8290a8;--b:#1d2536;--g:#34d399;--r:#f87171;--y:#fbbf24;--a:#818cf8;--h:#141a33}}
@@ -45,9 +45,9 @@ const spark=h=>{if(!h||h.length<2)return'<div class="e" style="height:34px">Char
  return`<svg viewBox="0 0 100 30" preserveAspectRatio="none" style="width:100%;height:34px"><polyline fill="none" stroke="${c}" stroke-width="1.5" vector-effect="non-scaling-stroke" points="${h.map((v,i)=>(i/(h.length-1)*100).toFixed(1)+','+(28-(v-lo)/r*26).toFixed(1)).join(' ')}"/></svg>`};
 const hb=r=>r.halal=='yes'?'<span class="pl hl">☪ Halal</span>':r.halal=='no'?'<span class="pl hn">Non-halal sector</span>':'<span class="pl">☪ Verify</span>';
 const card=r=>{const p=r.prof||{},pos=p.hi>p.lo?Math.max(0,Math.min(100,(r.p-p.lo)/(p.hi-p.lo)*100)):null;
-return`<div class="card" data-s="${esc(r.s)}" style="cursor:pointer"><div class="row"><div><span class="s">${esc(r.s)}</span>${r.pri?'<span class="tag">yours</span>':''}<div class="nm">${esc(p.name)}</div></div><span class="bd ${cls[r.rating]}">${r.rating}</span></div>
+return`<div class="card" data-s="${esc(r.s)}" style="cursor:pointer"><div class="row"><div><span class="s">${esc(r.s)}</span>${r.pri?'<span class="tag">yours</span>':''}<span class="stb" data-f="${esc(r.s)}">${window.fv&&fv(r.s)?'★':'☆'}</span><span class="stb" data-c="${esc(r.s)}">⚖</span><div class="nm">${esc(p.name)}</div></div><span class="bd ${cls[r.rating]}">${r.rating}</span></div>
 <div class="row" style="margin-top:8px"><span style="font-size:17px">$${r.p.toFixed(2)} <b class="${r.chg>=0?'up':'dn'}" style="font-size:13px">${r.chg>=0?'+':''}${r.chg.toFixed(2)}%</b></span><b>${r.score}/10 · ${Math.round(r.score*10)}%</b></div>
-<div class="sc"><i style="width:${r.score*10}%"></i></div>${spark(r.hist)}
+<div class="sc"><i style="width:${r.score*10}%"></i></div>${spark(r.hist)}${window.ol?ol(r):''}
 <div style="margin:6px 0"><span class="pl">${esc(r.sec)}</span>${hb(r)}</div>
 <div class="an"><div><b>${r.an?r.an.strongBuy+r.an.buy+' / '+r.an.hold+' / '+(r.an.sell+r.an.strongSell):'–'}</b>Buy/Hold/Sell</div><div><b>${p.pe?p.pe.toFixed(1):'–'}</b>P/E</div><div><b>${p.beta?p.beta.toFixed(2):'–'}</b>Beta</div></div>
 ${pos!==null?`<div class="e">52-wk range $${p.lo.toFixed(2)} – $${p.hi.toFixed(2)}</div><div class="rg"><i style="left:${pos}%"></i></div>`:''}
@@ -76,7 +76,7 @@ document.getElementById('ac').onclick=()=>document.getElementById('am').style.di
 async function load(){try{D=await (await fetch('data.json?t='+Date.now())).json();draw()}catch(e){document.getElementById('u').textContent='No data yet. Run the GitHub Action once.'}}
 q.oninput=e=>{Q=e.target.value.toUpperCase();draw()};so.onchange=e=>{SO=e.target.value;draw()};se.onchange=e=>{SE=e.target.value;draw()};hf.onclick=()=>{HF=!HF;draw()};
 const f=(v,d=2,s='')=>v==null||isNaN(v)?'–':(+v).toFixed(d)+s;
-document.getElementById('app').onclick=e=>{if(e.target.closest('a'))return;const c=e.target.closest('.card');if(c)deepScan(c.dataset.s)};
+document.getElementById('app').onclick=e=>{if(e.target.closest('a,.stb'))return;const c=e.target.closest('.card');if(c)deepScan(c.dataset.s)};
 document.getElementById('dc').onclick=()=>document.getElementById('dm').style.display='none';
 window.cp=t=>{try{navigator.clipboard.writeText(t)}catch(e){}};
 function deepScan(sym){const r=D._all.find(x=>x.s==sym),p=r.prof||{},m=p.mx||{},x=p.x||{},dp=r.deep,an=r.an;
@@ -99,4 +99,4 @@ function deepScan(sym){const r=D._all.find(x=>x.s==sym),p=r.prof||{},m=p.mx||{},
  <p class="m">Pass/fail thresholds are simple rules of thumb, not advice. Missing data shows n/a.</p>`;
  document.getElementById('dm').style.display='block'}
 load();setInterval(load,60000);
-</script></body></html>
+</script><script src="extras.js"></script></body></html>

@@ -8,8 +8,9 @@ rd=lambda f:list(dict.fromkeys(open(f).read().split())) if os.path.exists(f) els
 W,U,H=rd("watchlist.txt"),rd("universe.txt"),set(rd("halal.txt"))
 PRI=set(W[:11])
 MK="revenueGrowthTTMYoy epsGrowthTTMYoy grossMarginTTM operatingMarginTTM netProfitMarginTTM roeTTM roiTTM roaTTM currentRatioQuarterly quickRatioQuarterly totalDebt/totalEquityQuarterly netInterestCoverageTTM pfcfShareTTM psTTM pbQuarterly dividendYieldIndicatedAnnual payoutRatioTTM 13WeekPriceReturnDaily 26WeekPriceReturnDaily 52WeekPriceReturnDaily 10DayAverageTradingVolume".split()
-try: prev={r["s"]:r for r in json.load(open("data.json"))["_all"]}
-except Exception: prev={}
+try: PD=json.load(open("data.json"))
+except Exception: PD={}
+prev={r["s"]:r for r in PD.get("_all",[])}
 POS="beat surge soar jump upgrade record raise growth win partnership approval expands strong rally".split()
 NEG="miss plunge fall drop downgrade lawsuit probe cut weak recall halt dilution offering warning".split()
 now=d.date.today();fr=(now-d.timedelta(7)).isoformat()
@@ -82,4 +83,15 @@ for a in gn[:40]:
             ev.append({"name":nm,"h":a["headline"],"u":a["url"],"src":a.get("source",""),"up":top(1),"dn":top(-1)});break
     if len(ev)>=6:break
 brk=[{"s":r["s"],"chg":r["chg"],"sent":r["sent"]} for r in allr if abs(r["chg"])>=8 or abs(r["sent"])>=4]
-json.dump({"updated":d.datetime.utcnow().isoformat()+"Z","market":mk,"events":ev,"breaking":brk,"watchlist":wl,"tiers":tiers,"_all":allr},open("data.json","w"))
+etfs=[]
+for s in rd("etf.txt"):
+    o=next((x for x in PD.get("etfs",[]) if x["s"]==s),None)
+    if time.time()-START>1250:
+        if o: etfs.append(o)
+        continue
+    q=g(f"quote?symbol={s}")
+    if q and q.get("c"): etfs.append({"s":s,"p":q["c"],"chg":q.get("dp") or 0,"hist":((o or {}).get("hist",[])+[q["c"]])[-96:]})
+tr=PD.get("track",[])
+if not tr or tr[-1]["d"]!=str(now): tr.append({"d":str(now),"p":[{"s":r["s"],"p":r["p"]} for r in sorted(pool,key=lambda r:-r["score"])[:20]]})
+tr=tr[-90:]
+json.dump({"etfs":etfs,"track":tr,"updated":d.datetime.utcnow().isoformat()+"Z","market":mk,"events":ev,"breaking":brk,"watchlist":wl,"tiers":tiers,"_all":allr},open("data.json","w"))
